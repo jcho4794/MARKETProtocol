@@ -24,8 +24,13 @@ contract IQueryHub {
     function queryOracleHub(
         string oracleDataSource,
         string oracleQuery,
-        uint oracleQueryRepeatSeconds
+        uint expiration
     ) public payable returns (bytes32);
 
-    function getQueryPrice(string dataSource) returns (uint);
+    function queryOracleHubOnDemand(
+        string oracleDataSource,
+        string oracleQuery
+    ) public payable returns (bytes32);
+
+    function getQueryPrice(string dataSource) public returns (uint);
 }

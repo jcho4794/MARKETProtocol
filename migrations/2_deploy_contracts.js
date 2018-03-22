@@ -22,7 +22,7 @@ module.exports = function (deployer, network) {
     const marketTokenAmountForContractCreation = 0;   //for testing purposes require no balance
     const marketContractExpiration = Math.floor(Date.now() / 1000) + 60 * 15; // expires in 15 minutes.
 
-    deployer.deploy(QueryHub, {gas: 2100000}).then(function () {
+    deployer.deploy(QueryHub, {gas: 2800000}).then(function () {
 
 
       // deploy primary instance of market contract
@@ -46,7 +46,6 @@ module.exports = function (deployer, network) {
             [20155, 60465, 2, 10, marketContractExpiration],
             "URL",
             "json(https://api.kraken.com/0/public/Ticker?pair=ETHUSD).result.XETHZUSD.c.0",
-            120,
             {gas: gasLimit, value: web3.toWei('.2', 'ether'), from: web3.eth.accounts[0]}
           )
         }).then(function () {
@@ -82,7 +81,6 @@ module.exports = function (deployer, network) {
               [20155, 60465, 2, 10, marketContractExpiration],
               "URL",
               "json(https://api.kraken.com/0/public/Ticker?pair=ETHUSD).result.XETHZUSD.c.0",
-              120,
               {gas: gasLimit, value: web3.toWei('.2', 'ether'), from: web3.eth.accounts[0]}
             )
           }).then(function (deployedMarketContract) {

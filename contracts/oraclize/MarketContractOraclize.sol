@@ -32,9 +32,6 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
     string public ORACLE_DATA_SOURCE;
     string public ORACLE_QUERY;
     address QUERY_HUB_ADDRESS;
-
-    // state variables
-    string public lastPriceQueryResult;
     uint constant public QUERY_CALLBACK_GAS = 150000;
     uint constant SECONDS_PER_SIXTY_DAYS = 60 * 60 * 24 * 60;
     //uint constant public QUERY_CALLBACK_GAS_PRICE = 20000000000 wei; // 20 gwei - need to make this dynamic!
@@ -70,12 +67,11 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
         marketTokenAddress,
         baseTokenAddress,
         contractSpecs
-    )  public
+    )  public payable
     {
         ORACLE_DATA_SOURCE = oracleDataSource;
         ORACLE_QUERY = oracleQuery;
         QUERY_HUB_ADDRESS = queryHubAddress;
-        require(EXPIRATION > now);         // Require expiration time in the future.
 
         // Future timestamp must be within 60 days from now.
         // https://docs.oraclize.it/#ethereum-quick-start-schedule-a-query-in-the-future
@@ -93,10 +89,9 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
         require(msg.value >= cost); // user must pay enough to cover query and callback
         // create immediate query, we must make sure to store this one separately, so
         // we do not schedule recursive callbacks when the query completes.
-        bytes32 queryId = queryHub.queryOracleHub.value(cost)(
+        bytes32 queryId = queryHub.queryOracleHubOnDemand.value(cost)(
             ORACLE_DATA_SOURCE,
-            ORACLE_QUERY,
-            ORACLE_QUERY_REPEAT
+            ORACLE_QUERY
         );
         validQueryIDs[queryId] = true;
     }
@@ -124,14 +119,14 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
 
     /// @dev call to oraclize to set up our query and record its hash.
     function queryOracle() private {
-//        IQueryHub queryHub = IQueryHub(QUERY_HUB_ADDRESS);
-//        uint price = queryHub.getQueryPrice(ORACLE_DATA_SOURCE);
-//        require(this.balance >= price);
-//        bytes32 queryId = queryHub.queryOracleHub.value(price)(
-//            ORACLE_DATA_SOURCE,
-//            ORACLE_QUERY,
-//            ORACLE_QUERY_REPEAT
-//        );
-//        validScheduledQueryIDs[queryId] = true;
+        IQueryHub queryHub = IQueryHub(QUERY_HUB_ADDRESS);
+        uint price = queryHub.getQueryPrice(ORACLE_DATA_SOURCE);
+        require(this.balance >= price);
+        bytes32 queryId = queryHub.queryOracleHub.value(price)(
+            ORACLE_DATA_SOURCE,
+            ORACLE_QUERY,
+            EXPIRATION
+        );
+        validQueryIDs[queryId] = true;
     }
 }

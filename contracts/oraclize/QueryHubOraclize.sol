@@ -59,11 +59,26 @@ contract QueryHubOraclize is usingOraclize, IQueryHub {
     function queryOracleHub(
         string oracleDataSource,
         string oracleQuery,
-        uint oracleQueryRepeatSeconds
+        uint expiration
     ) public payable returns (bytes32) {
         require(oraclize_getPrice(oracleDataSource, QUERY_CALLBACK_GAS) > msg.value);
         bytes32 queryId = oraclize_query(
-            oracleQueryRepeatSeconds,
+            expiration,
+            oracleDataSource,
+            oracleQuery,
+            QUERY_CALLBACK_GAS
+        );
+        require(queryId != 0); // query was not created.
+        queryIDToCallBackContractAddress[queryId] = msg.sender;
+        return queryId;
+    }
+
+    function queryOracleHubOnDemand(
+        string oracleDataSource,
+        string oracleQuery
+    ) public payable returns (bytes32) {
+        require(oraclize_getPrice(oracleDataSource, QUERY_CALLBACK_GAS) > msg.value);
+        bytes32 queryId = oraclize_query(
             oracleDataSource,
             oracleQuery,
             QUERY_CALLBACK_GAS

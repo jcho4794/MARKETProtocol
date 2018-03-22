@@ -22,5 +22,5 @@ import "./oraclizeAPI.sol";
 /// @title
 /// @author Phil Elsasser <phil@marketprotocol.io>
 contract IQueryCallback {
-    function queryCallBack(bytes32 queryID, string result);
+    function queryCallBack(bytes32 queryID, string result) public;
 }
