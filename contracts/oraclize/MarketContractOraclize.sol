@@ -1,5 +1,5 @@
 /*
-    Copyright 2017 Phillip A. Elsasser
+    Copyright 2017-2018 Phillip A. Elsasser
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,14 +31,17 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
     // constants
     string public ORACLE_DATA_SOURCE;
     string public ORACLE_QUERY;
-    uint public ORACLE_QUERY_REPEAT;
     address QUERY_HUB_ADDRESS;
 
     // state variables
     string public lastPriceQueryResult;
-    mapping(bytes32 => bool) validScheduledQueryIDs;
-    mapping(bytes32 => bool) validUserRequestedQueryIDs;
+    uint constant public QUERY_CALLBACK_GAS = 150000;
+    uint constant SECONDS_PER_SIXTY_DAYS = 60 * 60 * 24 * 60;
+    //uint constant public QUERY_CALLBACK_GAS_PRICE = 20000000000 wei; // 20 gwei - need to make this dynamic!
 
+    // state variables
+    string public lastPriceQueryResult;
+    mapping(bytes32 => bool) validQueryIDs;
 
     /// @param contractName viewable name of this contract (BTC/ETH, LTC/ETH, etc)
     /// @param marketTokenAddress address of our member token
@@ -54,8 +57,6 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
     /// @param oracleDataSource a data-source such as "URL", "WolframAlpha", "IPFS"
     /// see http://docs.oraclize.it/#ethereum-quick-start-simple-query
     /// @param oracleQuery see http://docs.oraclize.it/#ethereum-quick-start-simple-query for examples
-    /// @param oracleQueryRepeatSeconds how often to repeat this callback to check for settlement, more frequent
-    /// queries require more gas and may not be needed.
     function MarketContractOraclize(
         string contractName,
         address marketTokenAddress,
@@ -63,20 +64,23 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
         address baseTokenAddress,
         uint[5] contractSpecs,
         string oracleDataSource,
-        string oracleQuery,
-        uint oracleQueryRepeatSeconds
+        string oracleQuery
     ) MarketContract(
         contractName,
         marketTokenAddress,
         baseTokenAddress,
         contractSpecs
-    )  public payable
+    )  public
     {
         ORACLE_DATA_SOURCE = oracleDataSource;
         ORACLE_QUERY = oracleQuery;
-        ORACLE_QUERY_REPEAT = oracleQueryRepeatSeconds;
         QUERY_HUB_ADDRESS = queryHubAddress;
-        queryOracle();  // schedules recursive calls to oracle
+        require(EXPIRATION > now);         // Require expiration time in the future.
+
+        // Future timestamp must be within 60 days from now.
+        // https://docs.oraclize.it/#ethereum-quick-start-schedule-a-query-in-the-future
+        require(EXPIRATION - now <= SECONDS_PER_SIXTY_DAYS);
+        queryOracle();                      // Schedule a call to oracle at contract expiration time.
     }
 
     /// @notice allows a user to request an extra query to oracle in order to push the contract into
@@ -94,7 +98,7 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
             ORACLE_QUERY,
             ORACLE_QUERY_REPEAT
         );
-        validUserRequestedQueryIDs[queryId] = true;
+        validQueryIDs[queryId] = true;
     }
 
     /*
@@ -106,23 +110,12 @@ contract MarketContractOraclize is MarketContract, IQueryCallback {
     /// @param result query to be processed
     function queryCallBack(bytes32 queryID, string result) public {
         require(msg.sender == QUERY_HUB_ADDRESS);
-        bool isScheduled = validScheduledQueryIDs[queryID];
-        require(isScheduled || validUserRequestedQueryIDs[queryID]);
+        require(validQueryIDs[queryID]);
         lastPriceQueryResult = result;
         lastPrice = result.parseInt(PRICE_DECIMAL_PLACES);
         UpdatedLastPrice(result);
-        checkSettlement();
-
-        if (isScheduled) {
-            delete validScheduledQueryIDs[queryID];
-            if (!isSettled) {
-                // this was a scheduled query, and we have not entered a settlement state
-                // so we want to schedule a new query.
-                queryOracle();
-            }
-        } else {
-            delete validUserRequestedQueryIDs[queryID];
-        }
+        checkSettlement();  // Verify settlement at expiration or requested early settlement.
+        delete validQueryIDs[queryID];
     }
 
     /*

@@ -1,18 +1,18 @@
 {
   "name": "market-solidity",
-  "version": "0.0.14",
-  "description": "Decentralized Derivates Trading Protocol For The Ethereum Blockchain",
+  "version": "0.0.20",
+  "description": "Decentralized Derivatives Trading Protocol For The Ethereum Blockchain",
   "main": "truffle-config.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
     "truffle": "^4.0.1",
-    "zeppelin-solidity": "^1.5.0"
+    "zeppelin-solidity": "1.5.0"
   },
   "devDependencies": {
-    "coveralls": "^3.0.0",
     "solidity-coverage": "^0.4.8",
+    "coveralls": "^3.0.0",
     "solium": "^1.0.5"
   },
   "scripts": {
@@ -34,5 +34,8 @@
   "bugs": {
     "url": "https://github.com/MARKETProtocol/MARKETProtocol/issues"
   },
-  "homepage": "https://github.com/MARKETProtocol/MARKETProtocol#readme"
+  "homepage": "https://github.com/MARKETProtocol/MARKETProtocol#readme",
+  "engines": {
+    "node": ">=8.10.0"
+  }
 }
