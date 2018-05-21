@@ -14,18 +14,19 @@ contract('OrderLib', function(accounts) {
     marketContractRegistry = await MarketContractRegistry.deployed();
     var whiteList = await marketContractRegistry.getAddressWhiteList.call();
     marketContract = await MarketContractOraclize.at(whiteList[1]);
-
+    console.log("17");
     const timeStamp = new Date().getTime() / 1000 + 60 * 5; // order expires 5 minute from now.
     const orderAddresses = [accounts[0], accounts[1], accounts[2]];
     const unsignedOrderValues = [0, 0, 33025, timeStamp, 0];
     const orderQty = 5; // user is attempting to buy 5
-
+    console.log("22");
     const orderHash = await orderLib.createOrderHash.call(
       marketContract.address,
       orderAddresses,
       unsignedOrderValues,
       orderQty
     );
+    console.log("29");
     const orderSignature = utility.signMessage(web3, accounts[0], orderHash);
     assert.isTrue(
       await orderLib.isValidSignature.call(
@@ -47,5 +48,6 @@ contract('OrderLib', function(accounts) {
       )),
       'Order hash matches a non signer'
     );
+    console.log("51");
   });
 });
