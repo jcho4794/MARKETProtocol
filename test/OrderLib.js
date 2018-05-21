@@ -20,6 +20,7 @@ contract('OrderLib', function(accounts) {
     const unsignedOrderValues = [0, 0, 33025, timeStamp, 0];
     const orderQty = 5; // user is attempting to buy 5
     console.log("22");
+    console.log(orderLib.address);
     const orderHash = await orderLib.createOrderHash.call(
       marketContract.address,
       orderAddresses,

@@ -67,7 +67,7 @@ library OrderLib {
         int orderQty
     ) public pure returns (bytes32)
     {
-        return keccak256(
+        return keccak256(abi.encodePacked(
             contractAddress,
             orderAddresses[0],
             orderAddresses[1],
@@ -78,7 +78,7 @@ library OrderLib {
             unsignedOrderValues[3],
             unsignedOrderValues[4],
             orderQty
-        );
+        ));
     }
 
     /// @notice confirms hash originated from signer
