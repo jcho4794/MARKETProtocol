@@ -100,7 +100,7 @@ contract MarketCollateralPool is Linkable {
     /// @param depositAmount qty of ERC20 tokens to deposit to the smart contract to cover open orders and collateral
     function depositTokensForTrading(uint256 depositAmount) external {
         // user must call approve!
-        require(MarketToken(MKT_TOKEN_ADDRESS).isUserEnabledForContract(MKT_CONTRACT, msg.sender));
+        require(MarketToken(MKT_TOKEN_ADDRESS).isUserEnabledForContract(MKT_CONTRACT, msg.sender), "Caller must be enabled for this contract");
         uint256 balanceAfterDeposit = userAddressToAccountBalance[msg.sender].add(depositAmount);
         ERC20(MKT_CONTRACT.COLLATERAL_TOKEN_ADDRESS()).safeTransferFrom(msg.sender, this, depositAmount);
         userAddressToAccountBalance[msg.sender] = balanceAfterDeposit;
@@ -111,8 +111,8 @@ contract MarketCollateralPool is Linkable {
     // outstanding positions and return all remaining collateral to the caller. This should only be called after
     // settlement has occurred.
     function settleAndClose() external {
-        require(MKT_CONTRACT.isSettled());
-        require(MarketToken(MKT_TOKEN_ADDRESS).isUserEnabledForContract(MKT_CONTRACT, msg.sender));
+        require(MKT_CONTRACT.isSettled(), "Contract is not settled");
+        require(MarketToken(MKT_TOKEN_ADDRESS).isUserEnabledForContract(MKT_CONTRACT, msg.sender), "Caller must be enabled for this contract");
         UserNetPosition storage userNetPos = addressToUserPosition[msg.sender];
         if (userNetPos.netPosition != 0) {
             // this user has a position that we need to settle based upon the settlement price of the contract

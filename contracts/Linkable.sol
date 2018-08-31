@@ -26,12 +26,12 @@ contract Linkable {
     address public linkedAddress;
 
     constructor(address addressToLink) public {
-        require(addressToLink != address(0));
+        require(addressToLink != address(0), "addressToLink can not be null");
         linkedAddress = addressToLink;
     }
 
     modifier onlyLinked() {
-        require(msg.sender == linkedAddress);
+        require(msg.sender == linkedAddress, "Can only be called by the linkedAddress");
         _;
     }
 }

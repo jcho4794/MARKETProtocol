@@ -53,13 +53,13 @@ contract OraclizeQueryTest is usingOraclize {
     /// @return unique identifier to allow them to retrieve the query results once completed.
     function testOracleQuery(string oracleDataSource, string oracleQuery) external payable returns (bytes32) {
         uint cost = oraclize_getPrice(oracleDataSource, QUERY_CALLBACK_GAS);
-        require(msg.value >= cost); // user must pay enough to cover query and callback
+        require(msg.value >= cost, "Not enough Ether sent for query"); // user must pay enough to cover query and callback
         bytes32 queryId = oraclize_query(
             oracleDataSource,
             oracleQuery,
             QUERY_CALLBACK_GAS
         );
-        require(queryId != 0);
+        require(queryId != 0, "Query failed to be created");
         validScheduledQueryIDs[queryId] = true;
         emit QueryScheduled(queryId);
         return queryId;
@@ -85,8 +85,8 @@ contract OraclizeQueryTest is usingOraclize {
     /// @param result query to be processed
     /// @param proof result proof
     function __callback(bytes32 queryID, string result, bytes proof) public {
-        require(msg.sender == oraclize_cbAddress());
-        require(validScheduledQueryIDs[queryID]);
+        require(msg.sender == oraclize_cbAddress(), "Only oraclize can provide this data");
+        require(validScheduledQueryIDs[queryID], "Query ID not recognized");
         delete validScheduledQueryIDs[queryID];
         queryResults[queryID] = result; //save result
         emit QueryCompleted(queryID);    // fire event so user can retrieve the result.

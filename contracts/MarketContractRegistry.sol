@@ -59,8 +59,8 @@ contract MarketContractRegistry is Ownable, MarketContractRegistryInterface {
         uint whiteListIndex
     ) external onlyOwner returns (bool)
     {
-        require(isWhiteListed[contractAddress]);
-        require(addressWhiteList[whiteListIndex] == contractAddress);
+        require(isWhiteListed[contractAddress], "contractAddress is not white listed");
+        require(addressWhiteList[whiteListIndex] == contractAddress, "address index mismatch");
         isWhiteListed[contractAddress] = false;
 
         // push the last item in array to replace the address we are removing and then trim the array.
@@ -73,8 +73,8 @@ contract MarketContractRegistry is Ownable, MarketContractRegistryInterface {
     /// a decentralized smart contract of community members to vote
     /// @param contractAddress contract to removed from white list
     function addAddressToWhiteList(address contractAddress) external {
-        require(msg.sender == owner || factoryAddressWhiteList[msg.sender]);
-        require(!isWhiteListed[contractAddress]);
+        require(msg.sender == owner || factoryAddressWhiteList[msg.sender], "Can only be called by an owner or factory");
+        require(!isWhiteListed[contractAddress], "contractAddress is already white listed");
         isWhiteListed[contractAddress] = true;
         addressWhiteList.push(contractAddress);
         emit AddressAddedToWhitelist(contractAddress);
@@ -83,7 +83,7 @@ contract MarketContractRegistry is Ownable, MarketContractRegistryInterface {
     /// @dev allows for the owner to add a new address of a factory responsible for creating new market contracts
     /// @param factoryAddress address of factory to be allowed to add contracts to whitelist
     function addFactoryAddress(address factoryAddress) external onlyOwner {
-        require(!factoryAddressWhiteList[factoryAddress]);
+        require(!factoryAddressWhiteList[factoryAddress], "factoryAddress is already white listed");
         factoryAddressWhiteList[factoryAddress] = true;
         emit FactoryAddressAdded(factoryAddress);
     }
@@ -91,7 +91,7 @@ contract MarketContractRegistry is Ownable, MarketContractRegistryInterface {
     /// @dev allows for the owner to remove an address of a factory
     /// @param factoryAddress address of factory to be removed
     function removeFactoryAddress(address factoryAddress) external onlyOwner {
-        require(factoryAddressWhiteList[factoryAddress]);
+        require(factoryAddressWhiteList[factoryAddress], "factory address is not white listed");
         factoryAddressWhiteList[factoryAddress] = false;
         emit FactoryAddressRemoved(factoryAddress);
     }

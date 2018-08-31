@@ -31,13 +31,13 @@ contract Creatable {
     event CreatorTransferred(address indexed currentCreator, address indexed newCreator);
 
     function transferCreator(address newCreator) onlyCreator public {
-        require(newCreator != address(0));
+        require(newCreator != address(0), "newCreator can not be null");
         emit CreatorTransferred(creator, newCreator);
         creator = newCreator;
     }
 
     modifier onlyCreator() {
-        require(msg.sender == creator);
+        require(msg.sender == creator, "Can only be called by the creator");
         _;
     }
 }

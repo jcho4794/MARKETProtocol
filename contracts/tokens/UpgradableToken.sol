@@ -40,7 +40,7 @@ contract UpgradeableToken is Ownable, BurnableToken, StandardToken {
     /// @notice Update token to the new upgraded token
     /// @param value The amount of token to be migrated to upgraded token
     function upgrade(uint256 value) external {
-        require(upgradeableTarget != address(0));
+        require(upgradeableTarget != address(0), "upgradeableTarget can not be null");
 
         burn(value);                    // burn tokens as we migrate them.
         totalUpgraded = totalUpgraded.add(value);

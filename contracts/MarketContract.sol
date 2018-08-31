@@ -120,15 +120,15 @@ contract MarketContract is Creatable {
         COLLATERAL_POOL_FACTORY_ADDRESS = collateralPoolFactoryAddress;
         MKT_TOKEN_ADDRESS = marketTokenAddress;
         MKT_TOKEN = MarketToken(marketTokenAddress);
-        require(MKT_TOKEN.isBalanceSufficientForContractCreation(msg.sender));    // creator must be MKT holder
+        require(MKT_TOKEN.isBalanceSufficientForContractCreation(msg.sender), "Insufficient MKT Balance");    // creator must be MKT holder
         PRICE_FLOOR = contractSpecs[0];
         PRICE_CAP = contractSpecs[1];
-        require(PRICE_CAP > PRICE_FLOOR);
+        require(PRICE_CAP > PRICE_FLOOR, "PRICE_CAP must be greater than PRICE_FLOOR");
 
         PRICE_DECIMAL_PLACES = contractSpecs[2];
         QTY_MULTIPLIER = contractSpecs[3];
         EXPIRATION = contractSpecs[4];
-        require(EXPIRATION > now);
+        require(EXPIRATION > now, "EXPIRATION must be in the future");
 
         CONTRACT_NAME = contractName;
         COLLATERAL_TOKEN_ADDRESS = collateralTokenAddress;
@@ -157,23 +157,26 @@ contract MarketContract is Creatable {
         bytes32 s
     ) external returns (int filledQty)
     {
-        require(isCollateralPoolContractLinked && !isSettled); // no trading past settlement
-        require(orderQty != 0 && qtyToFill != 0 && orderQty.isSameSign(qtyToFill));   // no zero trades, sings match
-        require(MKT_TOKEN.isUserEnabledForContract(this, msg.sender));
-        OrderLib.Order memory order = address(this).createOrder(orderAddresses, unsignedOrderValues, orderQty);
-        require(MKT_TOKEN.isUserEnabledForContract(this, order.maker));
+        require(isCollateralPoolContractLinked && !isSettled, "Contract in non tradeable state"); // no trading past settlement
+        require(
+            orderQty != 0 && qtyToFill != 0 && orderQty.isSameSign(qtyToFill),
+            "orderQty and qtyToFill must be non zero and the same sign"
+        );
 
-        // taker can be anyone, or specifically the caller!
-        require(order.taker == address(0) || order.taker == msg.sender);
-        // do not allow self trade
-        require(order.maker != address(0) && order.maker != msg.sender);
+        require(MKT_TOKEN.isUserEnabledForContract(this, msg.sender), "Caller must be enabled for this contract");
+        OrderLib.Order memory order = address(this).createOrder(orderAddresses, unsignedOrderValues, orderQty);
+        require(MKT_TOKEN.isUserEnabledForContract(this, order.maker), "Maker must be enabled for this contract");
+        require(order.taker == address(0) || order.taker == msg.sender, "Order can only be filled by defined Taker");
+        require(order.maker != address(0) && order.maker != msg.sender, "Maker cannot fill their own order");
         require(
             order.maker.isValidSignature(
                 order.orderHash,
                 v,
                 r,
                 s
-        ));
+            ),
+            "Invalid order signature"
+        );
 
 
         if (now >= order.expirationTimeStamp) {
@@ -249,10 +252,14 @@ contract MarketContract is Creatable {
         int qtyToCancel
     ) external returns (int qtyCancelled)
     {
-        require(qtyToCancel != 0 && qtyToCancel.isSameSign(orderQty));      // cannot cancel 0 and signs must match
-        require(!isSettled);
+        require(
+            qtyToCancel != 0 && qtyToCancel.isSameSign(orderQty),
+            "qtyToCancel must be non zero and same sign as orderQty"
+        );
+        require(!isSettled, "Contract already settled");
         OrderLib.Order memory order = address(this).createOrder(orderAddresses, unsignedOrderValues, orderQty);
-        require(order.maker == msg.sender);                                // only maker can cancel standing order
+        require(order.maker == msg.sender, "Only maker can cancel this order");
+
         if (now >= order.expirationTimeStamp) {
             emit Error(ErrorCodes.ORDER_EXPIRED, order.orderHash);
             return 0;
@@ -280,10 +287,12 @@ contract MarketContract is Creatable {
     /// can only be called once if successful.  Trading cannot commence until this is completed.
     /// @param poolAddress deployed address of the unique collateral pool for this contract.
     function setCollateralPoolContractAddress(address poolAddress) external onlyFactory {
-        require(!isCollateralPoolContractLinked); // address has not been set previously
-        require(poolAddress != address(0));       // not trying to set it to null addr.
+        require(!isCollateralPoolContractLinked, "This contract is already linked to a CollateralPool");
+        require(poolAddress != address(0), "poolAddress can not be null");
         marketCollateralPool = MarketCollateralPool(poolAddress);
-        require(marketCollateralPool.linkedAddress() == address(this)); // ensure pool set up correctly.
+
+        // ensure pool set up correctly.
+        require(marketCollateralPool.linkedAddress() == address(this), "poolAddress is not linked to this contract");
         MARKET_COLLATERAL_POOL_ADDRESS = poolAddress;
         isCollateralPoolContractLinked = true;
     }
@@ -350,7 +359,7 @@ contract MarketContract is Creatable {
 
     ///@dev Throws if called by any account other than the factory.
     modifier onlyFactory() {
-        require(msg.sender == COLLATERAL_POOL_FACTORY_ADDRESS);
+        require(msg.sender == COLLATERAL_POOL_FACTORY_ADDRESS, "Only callable by the COLLATERAL_POOL_FACTORY_ADDRESS");
         _;
     }
 }

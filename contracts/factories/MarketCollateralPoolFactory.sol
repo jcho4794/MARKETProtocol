@@ -36,7 +36,11 @@ contract MarketCollateralPoolFactory is Ownable, MarketCollateralPoolFactoryInte
     /// @dev creates the needed collateral pool and links it to our market contract.
     /// @param marketContractAddress address of the newly deployed market contract.
     function deployMarketCollateralPool(address marketContractAddress) external {
-        require(MarketContractRegistryInterface(marketContractRegistry).isAddressWhiteListed(marketContractAddress));
+        require(
+            MarketContractRegistryInterface(marketContractRegistry).isAddressWhiteListed(marketContractAddress),
+                "marketContractAddress not white listed"
+        );
+
         MarketCollateralPool marketCollateralPool = new MarketCollateralPool(marketContractAddress);
         MarketContract(marketContractAddress).setCollateralPoolContractAddress(marketCollateralPool);
     }
@@ -44,7 +48,7 @@ contract MarketCollateralPoolFactory is Ownable, MarketCollateralPoolFactoryInte
     /// @dev allows for the owner to set the desired registry for contract creation.
     /// @param registryAddress desired registry address.
     function setRegistryAddress(address registryAddress) external onlyOwner {
-        require(registryAddress != address(0));
+        require(registryAddress != address(0), "registryAddress can not be null");
         marketContractRegistry = registryAddress;
     }
 }

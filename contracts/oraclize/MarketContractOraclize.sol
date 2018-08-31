@@ -76,7 +76,7 @@ contract MarketContractOraclize is MarketContract, usingOraclize {
 
         // Future timestamp must be within 60 days from now.
         // https://docs.oraclize.it/#ethereum-quick-start-schedule-a-query-in-the-future
-        require(EXPIRATION - now <= 60 days);
+        require(EXPIRATION - now <= 60 days, "Expiration must be within 60 days");
         queryOracle();                      // Schedule a call to oracle at contract expiration time.
     }
 
@@ -86,7 +86,7 @@ contract MarketContractOraclize is MarketContract, usingOraclize {
     /// settle a contract early if a price cap or floor has been breached.
     function requestEarlySettlement() external payable {
         uint cost = oraclize_getPrice(ORACLE_DATA_SOURCE, QUERY_CALLBACK_GAS);
-        require(msg.value >= cost); // user must pay enough to cover query and callback
+        require(msg.value >= cost, "Not enough Ether sent for query"); // user must pay enough to cover query and callback
         // create immediate query, we must make sure to store this one separately, so
         // we do not schedule recursive callbacks when the query completes.
         bytes32 queryId = oraclize_query(
@@ -94,7 +94,7 @@ contract MarketContractOraclize is MarketContract, usingOraclize {
             ORACLE_QUERY,
             QUERY_CALLBACK_GAS
         );
-        require(queryId != 0);
+        require(queryId != 0, "Query failed to be created");
         validQueryIDs[queryId] = true;
     }
 
@@ -107,8 +107,8 @@ contract MarketContractOraclize is MarketContract, usingOraclize {
     /// @param result query to be processed
     /// @param proof result proof
     function __callback(bytes32 queryID, string result, bytes proof) public {
-        require(msg.sender == oraclize_cbAddress());
-        require(validQueryIDs[queryID]);  // At expiration or early settlement.
+        require(msg.sender == oraclize_cbAddress(), "Only oraclize can provide this data");
+        require(validQueryIDs[queryID], "Query ID not recognized");  // At expiration or early settlement.
         lastPriceQueryResult = result;
         lastPrice = parseInt(result, PRICE_DECIMAL_PLACES);
         emit UpdatedLastPrice(result);
@@ -137,7 +137,7 @@ contract MarketContractOraclize is MarketContract, usingOraclize {
             ORACLE_QUERY,
             QUERY_CALLBACK_GAS
         );
-        require(queryId != 0);
+        require(queryId != 0, "Query failed to be created");
         validQueryIDs[queryId] = true;
     }
 }

@@ -45,7 +45,7 @@ contract InitialAllocationCollateralToken is CollateralToken {
 
     /// @notice allows caller to claim a one time allocation of tokens.
     function getInitialAllocation() external {
-        require(!isInitialAllocationClaimed[msg.sender]);
+        require(!isInitialAllocationClaimed[msg.sender], "Initial allocation already claimed");
         isInitialAllocationClaimed[msg.sender] = true;
         balances[msg.sender] = balances[msg.sender].add(INITIAL_TOKEN_ALLOCATION);
         totalTokenAllocationsRequested++;

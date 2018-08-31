@@ -81,7 +81,7 @@ contract MarketContractFactoryOraclize is Ownable {
     /// @dev allows for the owner to set the desired registry for contract creation.
     /// @param registryAddress desired registry address.
     function setRegistryAddress(address registryAddress) external onlyOwner {
-        require(registryAddress != address(0));
+        require(registryAddress != address(0), "registryAddress can not be null");
         marketContractRegistry = registryAddress;
     }
 
